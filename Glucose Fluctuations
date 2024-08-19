@@ -1,0 +1,44 @@
+import numpy as np
+import matplotlib.pyplot as plt
+
+# Generate time points (40 units, 400 even divisions within)
+time = np.linspace(0, 40, 400)
+
+# Generate glucose levels with controlled fluctuations
+np.random.seed(0)  # Seed for reproducibility of random numbers
+base_line = 4.8  # Base glucose level, set slightly below the normal range (3.9 - 5.0 mmol/L)
+amplitude = 1.2  # Amplitude ensures glucose levels fluctuate enough to cross thresholds
+# Create glucose levels using a sine wave (for regular fluctuation) and add random variations
+glucose_levels = base_line + amplitude * np.sin(0.5 * np.pi * time) + np.random.normal(0, 0.1, size=time.size)
+
+# Introduce deeper dips at specific points to simulate dangerous hypoglycaemic events
+dip_indices = np.linspace(50, 350, 4, dtype=int)  # Choose 4 points evenly spaced along the time array
+for idx in dip_indices:
+    # For each index, create a dip in glucose levels, demonstrating a Level 2 hypoglycaemia event
+    glucose_levels[idx-5:idx+5] = 2.8 + np.random.normal(0, 0.1, 10)  # Deeper dips near 2.8 mmol/L
+
+# Define thresholds for hypoglycaemia levels
+level1_threshold = 3.9  # Level 1 hypoglycaemia threshold (mild)
+level2_threshold = 3.0  # Level 2 hypoglycaemia threshold (severe)
+normal_glucose_level = 5.0  # Typical normal glucose level in mmol/L
+
+# Create the plot to visualise glucose levels and thresholds
+plt.figure(figsize=(15, 7))  # Set figure size
+plt.plot(time, glucose_levels, label='Blood Glucose Levels', color='blue')  # Plot glucose levels over time
+# Add horizontal lines for different thresholds
+plt.axhline(y=level1_threshold, color='green', linestyle='--', linewidth=2, label='Level 1 Threshold (3.9 mmol/L)')
+plt.axhline(y=level2_threshold, color='red', linestyle='--', linewidth=2, label='Level 2 Threshold (3.0 mmol/L)')
+plt.axhline(y=normal_glucose_level, color='black', linestyle='--', linewidth=2, label='Normal Glucose Level (5.0 mmol/L)')
+
+# Add title and axis labels
+plt.title('Blood Glucose Levels with Hypoglycaemia Thresholds')
+plt.xlabel('Time')  # Label for x-axis
+plt.ylabel('Blood Glucose Level (mmol/L)')  # Label for y-axis
+plt.legend()  # Show the legend for the different plotted lines
+plt.grid(True)  # Add a grid to make the plot easier to read
+
+# Save the figure as a PNG image
+plt.savefig('/home/ej121/dissertation_part1/blood_glucose_levels_with_thresholds.png')
+
+# Display the plot
+plt.show()
