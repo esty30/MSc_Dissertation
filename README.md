@@ -49,4 +49,5 @@ Future Directions
 - Learn ways of using similar variables, names and format in code across all scripts within the same project
 
 Final Notes
+
 This README file provides a general and brief overview of the project, scripts, and how to use them.
