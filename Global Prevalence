@@ -1,0 +1,39 @@
+import matplotlib.pyplot as plt 
+
+# Updated data for the visualisations
+years = [2000, 2010, 2020, 2030, 2040, 2050]  # List of years for the x-axis
+prevalence = [4.6, 8.5, 9.8, 10.8, 11.2, 12.0]  # List of diabetes prevalence percentages for each year
+population = [151, 366, 537, 643, 784, 1310]  # List of the number of people with diabetes (in millions) for each year
+
+# Create a line graph for diabetes prevalence
+plt.figure(figsize=(10, 5))  # Set the figure size
+plt.plot(years, prevalence, marker='o', linestyle='-', color='b')  # Plot the years against prevalence with marker points and a line
+plt.title('Global Prevalence of Diabetes (2000–2050)')  # Set the title of the graph
+plt.xlabel('Year', fontsize=12)  # Label the x-axis
+plt.ylabel('Prevalence of Diabetes (%)', fontsize=12)  # Label the y-axis
+plt.xticks(years)  # Set the x-axis to match the years
+plt.ylim(0, 15)  # Set the y-axis limits
+
+# Adding values on the line graph
+for i, txt in enumerate(prevalence):  # Loop through each data point
+    plt.text(years[i], prevalence[i] + 0.3, f"{prevalence[i]}%", fontsize=9, ha='center')  # Annotate each point with its value
+
+plt.show()  # Display the line graph
+
+# Create a bar chart for the number of people with diabetes
+plt.figure(figsize=(10, 5))  # Set the figure size
+bars = plt.bar(years, population, color='orange', width=3.0)  # Create a bar chart with thicker bars
+plt.title('Number of People with Diabetes (2000–2050)')  # Set the title of the bar chart
+plt.xlabel('Year', fontsize=12)  # Label the x-axis
+plt.ylabel('Number of People with Diabetes (millions)', fontsize=12)  # Label the y-axis
+plt.xticks(years)  # Set the x-axis to match the years
+plt.ylim(0, 1500)  # Set the y-axis limits
+
+# Adding values on the bar chart
+for bar in bars:  # Loop through each bar
+    yval = bar.get_height()  # Get the height of the bar
+    plt.text(bar.get_x() + bar.get_width()/2, yval + 50, int(yval), fontsize=9, ha='center')  # Annotate each bar with its value
+
+plt.show()  # Display the bar chart
+
+# Save visualisations to desired directory 
