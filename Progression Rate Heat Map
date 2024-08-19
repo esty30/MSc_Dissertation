@@ -1,0 +1,59 @@
+import matplotlib.pyplot as plt
+import numpy as np
+import os
+
+# Define the total number of squares
+total_squares = 100
+
+# Calculate the number of squares to shade based on the progression percentage
+progressed_percentage = 25.71
+progressed_squares = int(round(total_squares * (progressed_percentage / 100)))
+
+# Create a grid for the squares
+grid_size = int(np.sqrt(total_squares))
+fig, ax = plt.subplots(figsize=(6, 6))
+
+# Define colours
+bright_red = '#FF0000'  # Bright red for progressed episodes
+background_colour = '#D3D3D3'  # Light grey for non-progressed episodes
+
+# Plot the squares with a modern aesthetic
+for i in range(total_squares):
+    # Calculate the position of each square
+    x = i % grid_size
+    y = i // grid_size
+    # Determine the colour based on whether the square is in the progressed percentage
+    colour = bright_red if i < progressed_squares else background_colour
+    # Add a square patch to the plot with rounded edges
+    ax.add_patch(plt.Rectangle((x, grid_size - y - 1), 1, 1, color=colour, ec='white', lw=0.5, alpha=0.9))
+
+# Add text annotation 
+ax.text(0.5 * grid_size, -1.5, f"{progressed_percentage:.2f}% of Level 1 episodes progressed to Level 2",
+        ha='center', va='center', fontsize=14, color='black', fontweight='bold')
+
+# Set limits, remove axes, and adjust the aspect so x and y are equal
+ax.set_xlim(0, grid_size)
+ax.set_ylim(0, grid_size)
+ax.set_xticks([])
+ax.set_yticks([])
+ax.set_aspect('equal')
+ax.set_facecolor('white')
+ax.set_title('Progression from Level 1 to Level 2 Hypoglycaemia', fontsize=16, fontweight='bold')
+
+# Remove borders 
+for spine in ax.spines.values():
+    spine.set_visible(False)
+
+# Save the figure
+output_directory = '/home/ej121/dissertation_part1'
+output_filename = 'hypoglycaemia_progression_visualisation.png'
+output_path = os.path.join(output_directory, output_filename)
+
+# Ensure the directory exists
+os.makedirs(output_directory, exist_ok=True)
+
+# Save the plot to the specified path
+plt.savefig(output_path, bbox_inches='tight')
+plt.show()
+
+print(f"Plot saved at: {output_path}")
