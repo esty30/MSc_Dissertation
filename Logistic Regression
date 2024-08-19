@@ -77,7 +77,7 @@ def fit_and_visualise_logistic_regression(data, predictors, outcome, output_dir,
         summary_df = pd.DataFrame({
             'Coefficient': model.params.round(3),  # Round coefficients to 3 decimal places
             'Odds Ratio': np.exp(model.params).round(3),  # Convert coefficients to odds ratios and round to 3dp
-            'P-value': model.pvalues.apply(lambda x: '<0.01' if x < 0.01 else round(x, 3)),  # Adjust p-value rounding
+            'P-value': model.pvalues.apply(lambda x: '<0.001' if x < 0.001 else round(x, 3)),  # Adjust p-value rounding
             'CI 2.5%': np.exp(model.conf_int()[0]).round(3),  # Exponentiate the lower bound of the confidence interval
             'CI 97.5%': np.exp(model.conf_int()[1]).round(3)  # Exponentiate the upper bound of the confidence interval
         })
