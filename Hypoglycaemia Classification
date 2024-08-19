@@ -1,0 +1,85 @@
+# Learning a new method
+# Hardcoded HTML
+
+html_content = """
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Hypoglycaemia Levels</title>
+    <style>
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        table, th, td {
+            border: 1px solid black;
+        }
+        th, td {
+            padding: 15px;
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+
+<h2>Hypoglycaemia Levels</h2>
+
+<table>
+    <tr>
+        <th>Level</th>
+        <th>Measurement</th>
+        <th>Symptoms</th>
+        <th>Consequences if not managed</th>
+    </tr>
+"""
+# Define the data for the hypoglycaemia levels 
+
+data = [
+    {
+        "Level": "Level 1 Hypoglycaemia (Mild)",
+        "Measurement": "Blood glucose levels between 54 mg/dL (3.0 mmol/L) and 70 mg/dL (3.9 mmol/L).",
+        "Symptoms": "Shakiness, sweating, dizziness, hunger, headache, and irritability.",
+        "Consequences if not managed": "Mild hypoglycaemia can progress to more severe levels if untreated. Early intervention with glucose intake can prevent further decline."
+    },
+    {
+        "Level": "Level 2 Hypoglycaemia (Moderate)",
+        "Measurement": "Blood glucose levels below 54 mg/dL (3.0 mmol/L).",
+        "Symptoms": "More pronounced neuroglycopenic symptoms such as confusion, difficulty concentrating, blurred vision, and unusual behaviour.",
+        "Consequences if not managed": "Moderate hypoglycaemia requires immediate action to prevent progression to severe hypoglycaemia. Without treatment, it can lead to severe cognitive impairment and physical dysfunction."
+    },
+    {
+        "Level": "Level 3 Hypoglycaemia (Severe)",
+        "Measurement": "Blood glucose levels typically below 40 mg/dL, though the exact threshold can vary.",
+        "Symptoms": "Severe cognitive impairment, seizures, loss of consciousness, and inability to self-treat due to physical incapacitation.",
+        "Consequences if not managed": "Severe hypoglycaemia is a medical emergency. If not promptly treated, it can result in coma, permanent brain damage, or death."
+    }
+]
+
+# Loop through the data and add each row to the HTML table  
+
+for item in data:
+    html_content += f"""
+    <tr>
+        <td>{item['Level']}</td>
+        <td>{item['Measurement']}</td>
+        <td>{item['Symptoms']}</td>
+        <td>{item['Consequences if not managed']}</td>
+    </tr>
+    """
+
+# Close the HTML table and other tags 
+
+html_content += """
+</table>
+
+</body>
+</html>
+"""
+
+# Save the HTML content to a file
+
+output_path = "/home/ej121/dissertation_part1/hypoglycaemia_levels.html"
+with open(output_path, "w") as file:
+    file.write(html_content)
+
+output_path
