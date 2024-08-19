@@ -1,0 +1,110 @@
+import pandas as pd
+
+# Define the data with bullet points for the table
+# The keys are the columns ("Condition", "Hypoglycaemia", "Hyperglycaemia")
+# The values are lists containing HTML-formatted strings representing the definitions, symptoms, causes, and prevention methods for each condition
+
+data = {
+    "Condition": [
+        "<b>Definition</b>", 
+        "<b>Symptoms</b>", 
+        "<b>Causes</b>", 
+        "<b>Prevention</b>"
+    ],
+    "Hypoglycaemia": [
+        "<ul>"
+        "<li>A condition where blood glucose levels drop below normal.</li>"
+        "<li>Occurs if the body has too much insulin, too little food, or excessive exercise without adequate food intake.</li>"
+        "<li><b>Type 1 Diabetes:</b> More common due to insulin administration.</li>"
+        "<li><b>Type 2 Diabetes:</b> Can occur due to medication or diet management.</li>"
+        "</ul>",
+        "<ul>"
+        "<li>Sweating</li>"
+        "<li>Feeling tired</li>"
+        "<li>Dizziness</li>"
+        "<li>Feeling hungry</li>"
+        "<li>Tingling lips</li>"
+        "<li>Feeling shaky or trembling</li>"
+        "<li>Fast or pounding heartbeat (palpitations)</li>"
+        "<li>Easily irritated, tearful, anxious or moody</li>"
+        "<li>Turning pale</li>"
+        "</ul>",
+        "<ul>"
+        "<li>Taking too much insulin</li>"
+        "<li>Not eating enough</li>"
+        "<li>Missing a meal</li>"
+        "<li>Exercising too hard without eating carbohydrates</li>"
+        "<li>Drinking alcohol on an empty stomach</li>"
+        "</ul>",
+        "<ul>"
+        "<li>Eating regularly and not skipping meals</li>"
+        "<li>Carrying a source of fast-acting carbohydrate</li>"
+        "<li>Monitoring blood glucose levels regularly</li>"
+        "<li>Taking medications as prescribed</li>"
+        "</ul>"
+    ],
+    "Hyperglycaemia": [
+        "<ul>"
+        "<li>A condition where blood glucose levels are higher than normal.</li>"
+        "<li>Occurs if the body does not have enough insulin or cannot use insulin properly.</li>"
+        "<li><b>Type 1 Diabetes:</b> Often due to insufficient insulin administration.</li>"
+        "<li><b>Type 2 Diabetes:</b> Often due to insulin resistance or inadequate insulin production.</li>"
+        "</ul>",
+        "<ul>"
+        "<li>Increased thirst and dry mouth</li>"
+        "<li>Needing to pee frequently</li>"
+        "<li>Tiredness</li>"
+        "<li>Blurred vision</li>"
+        "<li>Unintentional weight loss</li>"
+        "<li>Recurrent infections (thrush, bladder, skin infections)</li>"
+        "<li>Tummy pain</li>"
+        "<li>Feeling or being sick</li>"
+        "</ul>",
+        "<ul>"
+        "<li>Missing a dose of insulin or diabetes medication</li>"
+        "<li>Eating too much sugary or starchy food</li>"
+        "<li>Being less active than usual</li>"
+        "<li>Illness or infection</li>"
+        "<li>Stress</li>"
+        "<li>Certain medications (e.g., steroids)</li>"
+        "</ul>",
+        "<ul>"
+        "<li>Regularly monitoring blood glucose levels</li>"
+        "<li>Following a healthy diet</li>"
+        "<li>Exercising regularly</li>"
+        "<li>Adhering to prescribed medication or insulin regimens</li>"
+        "</ul>"
+    ]
+}
+
+# Converts the dictionary data into a pandas DataFrame
+
+df = pd.DataFrame(data)
+
+# Convert the DataFrame to an HTML table with custom styles
+# Index=False removes the DataFrame index from the HTML table
+# Escape=False prevents HTML tags from working incorrectly on the webpage
+
+html = df.to_html(index=False, escape=False)
+
+# Add custom styles to the HTML table for better presentation
+# The first replace method modifies the table's HTML to take up the width of the page
+# The second and third replace methods, add space and adjust text position for the table headers and data 
+
+html = html.replace('<table border="1" class="dataframe">',
+                    '<table border="1" class="dataframe" style="border-collapse: collapse; width: 100%;">')
+
+html = html.replace('<th>', '<th style="text-align: center; padding: 10px;">')
+html = html.replace('<td>', '<td style="text-align: left; padding: 10px;">')
+
+# Write the HTML string to a file in the current directory
+
+output_path = "/home/ej121/dissertation_part1/diabetes_hypo_hyperglycaemia_table.html"
+with open(output_path, "w") as f:
+    f.write(html)
+
+# Display the DataFrame
+# Prints the DataFrame for extra verification and for debugging if required 
+
+print(df)
+
