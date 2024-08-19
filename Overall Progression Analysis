@@ -1,0 +1,127 @@
+import pandas as pd
+import matplotlib.pyplot as plt
+
+# Load the CSV files containing hypoglycaemia data for different glucose thresholds
+sdh_3_0 = pd.read_csv('/home/ej121/dissertation_part2/association/Trial_sdh3.0_allprh_map.csv')
+sdh_3_9 = pd.read_csv('/home/ej121/dissertation_part2/association/Trial_sdh3.9_allprh_map.csv')
+
+# Remove rows where glucose values are missing (PRH data without glucose values)
+sdh_3_0_cleaned = sdh_3_0.dropna(subset=['sdh_number']).copy()
+sdh_3_9_cleaned = sdh_3_9.dropna(subset=['sdh_number']).copy()
+
+# Normalise the 'is_symptomatic_prh' column by stripping spaces and converting to lowercase
+sdh_3_0_cleaned['is_symptomatic_prh'] = sdh_3_0_cleaned['is_symptomatic_prh'].str.strip().str.lower()
+sdh_3_9_cleaned['is_symptomatic_prh'] = sdh_3_9_cleaned['is_symptomatic_prh'].str.strip().str.lower()
+
+# Check the unique values in 'is_symptomatic_prh' to ensure data consistency
+unique_values_3_0 = sdh_3_0_cleaned['is_symptomatic_prh'].unique()
+unique_values_3_9 = sdh_3_9_cleaned['is_symptomatic_prh'].unique()
+
+# Print unique values for validation
+print("Unique values in 'is_symptomatic_prh' for 3.0 data:", unique_values_3_0)
+print("Unique values in 'is_symptomatic_prh' for 3.9 data:", unique_values_3_9)
+
+# Count the number of symptomatic cases in both 3.0 and 3.9 datasets
+symptomatic_3_9_count = sdh_3_9_cleaned[sdh_3_9_cleaned['is_symptomatic_prh'] == 'yes'].shape[0]
+symptomatic_3_0_count = sdh_3_0_cleaned[sdh_3_0_cleaned['is_symptomatic_prh'] == 'yes'].shape[0]
+
+# Print counts of symptomatic episodes
+print("Symptomatic 3.9 count:", symptomatic_3_9_count)
+print("Symptomatic 3.0 count:", symptomatic_3_0_count)
+
+# Function to split 'sdh_interval' into start_time and end_time, handling missing values
+def split_interval(interval):
+    try:
+        start_time, end_time = interval.split('--')  # Split the interval into start and end
+        return pd.Series([start_time.strip(), end_time.strip()])  # Return the cleaned times
+    except ValueError:
+        return pd.Series([None, None])  # Return None for invalid intervals
+
+# Apply the split_interval function to create 'start_time' and 'end_time' columns
+sdh_3_0_cleaned[['start_time', 'end_time']] = sdh_3_0_cleaned['sdh_interval'].apply(split_interval)
+sdh_3_9_cleaned[['start_time', 'end_time']] = sdh_3_9_cleaned['sdh_interval'].apply(split_interval)
+
+# Convert the 'start_time' and 'end_time' columns to datetime format, with error handling
+sdh_3_0_cleaned.loc[:, 'start_time'] = pd.to_datetime(sdh_3_0_cleaned['start_time'], errors='coerce')
+sdh_3_0_cleaned.loc[:, 'end_time'] = pd.to_datetime(sdh_3_0_cleaned['end_time'], errors='coerce')
+sdh_3_9_cleaned.loc[:, 'start_time'] = pd.to_datetime(sdh_3_9_cleaned['start_time'], errors='coerce')
+sdh_3_9_cleaned.loc[:, 'end_time'] = pd.to_datetime(sdh_3_9_cleaned['end_time'], errors='coerce')
+
+# Summarise data for 3.9 and 3.0 glucose episodes by counting the number of episodes and symptomatic episodes per participant and date
+summary_3_9 = sdh_3_9_cleaned.groupby(['Hypometrics_ID', 'Date']).agg(
+    Number_of_3_9=('sdh_interval', 'count'),  # Count total 3.9 episodes
+    Number_of_symptomatic_3_9=('is_symptomatic_prh', lambda x: (x == 'yes').sum())  # Count symptomatic 3.9 episodes
+).reset_index()
+
+summary_3_0 = sdh_3_0_cleaned.groupby(['Hypometrics_ID', 'Date']).agg(
+    Number_of_3_0=('sdh_interval', 'count'),  # Count total 3.0 episodes
+    Number_of_symptomatic_3_0=('is_symptomatic_prh', lambda x: (x == 'yes').sum())  # Count symptomatic 3.0 episodes
+).reset_index()
+
+# Merge the 3.9 and 3.0 episode summaries based on participant ID and date
+summary_df = pd.merge(summary_3_9, summary_3_0, on=['Hypometrics_ID', 'Date'], how='left')
+
+# Check if a 3.9 episode progressed to a 3.0 episode by comparing time intervals for each participant and date
+progressed = []
+for i, row_3_9 in sdh_3_9_cleaned.iterrows():
+    participant_id = row_3_9['Hypometrics_ID']
+    date_3_9 = row_3_9['Date']
+    start_time_3_9 = row_3_9['start_time']
+    end_time_3_9 = row_3_9['end_time']
+    
+    # Check for matching 3.0 episodes that occur within the 3.9 episode's time range
+    match = sdh_3_0_cleaned[
+        (sdh_3_0_cleaned['Hypometrics_ID'] == participant_id) &
+        (sdh_3_0_cleaned['Date'] == date_3_9) &
+        (sdh_3_0_cleaned['start_time'] >= start_time_3_9) &
+        (sdh_3_0_cleaned['end_time'] <= end_time_3_9)
+    ]
+    
+    progressed.append(len(match))  # Record if a 3.0 episode occurred within the 3.9 window
+
+# Mark whether each 3.9 episode progressed to 3.0
+sdh_3_9_cleaned['Progressed'] = progressed
+sdh_3_9_cleaned['Progressed'] = sdh_3_9_cleaned['Progressed'].apply(lambda x: 'Progressed' if x > 0 else 'Did not')
+
+# Summarise the progression results by counting how many episodes progressed or did not
+progression_summary = sdh_3_9_cleaned.groupby('Progressed').size().reset_index(name='count')
+
+# Calculate total episodes, level 1 only episodes, and progressed episodes
+total_hypos = progression_summary['count'].sum()
+level_1_only = progression_summary.loc[progression_summary['Progressed'] == 'Did not', 'count'].values[0]
+progressed_episodes = progression_summary.loc[progression_summary['Progressed'] == 'Progressed', 'count'].values[0]
+
+# Create a final summary table with the counts
+final_summary = pd.DataFrame({
+    'Category': ['Total Hypos', 'Level 1 Only', 'Progressed Episodes'],
+    'Count': [total_hypos, level_1_only, progressed_episodes]
+})
+
+# Print the final summary to the console
+print(final_summary)
+
+# Save the final summary to a CSV file
+final_summary.to_csv('/home/ej121/dissertation_part2/association/final_hypo_summary.csv', index=False)
+
+# Create and save a table plot of the final summary
+
+fig, ax = plt.subplots(figsize=(8, 2))  # Set the size of the plot
+ax.axis('tight')
+ax.axis('off')  # Turn off axis visibility
+table = ax.table(cellText=final_summary.values, colLabels=final_summary.columns, cellLoc='center', loc='center')
+table.auto_set_font_size(False)  # Disable automatic font size adjustment
+table.set_fontsize(12)  # Set font size
+table.scale(1.2, 1.2)  # Scale the table
+
+# Save the table as an image
+plt.savefig('/home/ej121/dissertation_part2/association/final_hypo_summary.png', bbox_inches='tight', dpi=300)
+plt.show()
+
+# Combine the final summary with the original dataset, adding the progression information
+final_df = pd.merge(summary_df, sdh_3_9_cleaned[['Hypometrics_ID', 'Date', 'Progressed']], on=['Hypometrics_ID', 'Date'], how='left')
+
+# Print the combined dataset
+print(final_df)
+
+# Save the combined dataset to a CSV file
+final_df.to_csv('/home/ej121/dissertation_part2/association/combined_hypo_summary.csv', index=False)
