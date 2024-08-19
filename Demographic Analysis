@@ -1,0 +1,111 @@
+# Install necessary packages if they are not already installed
+if (!require(tidyverse)) install.packages("tidyverse")  # Data manipulation and visualisation packages
+if (!require(gridExtra)) install.packages("gridExtra")  # For arranging multiple grid-based plots
+if (!require(grid)) install.packages("grid")  # For working with graphical layouts in R
+if (!require(gtable)) install.packages("gtable")  # Layout functionality for grid objects
+
+# Load libraries
+library(tidyverse)  
+library(gridExtra)  
+library(grid)  
+library(gtable)  
+
+# Define file paths for CSV data files
+file_level1 <- "/home/ej121/dissertation_part2/demographics/Trial_sdh3.9_allprh_map.csv"
+file_level2 <- "/home/ej121/dissertation_part2/demographics/Trial_sdh3.0_allprh_map.csv"
+file_baseline <- "/home/ej121/dissertation_part2/demographics/Trial_baseline_characteristics.csv"
+
+# Function to clean column names
+# Converts column names to valid R names and ensures they are unique
+clean_colnames <- function(df) {
+  colnames(df) <- make.names(colnames(df), unique = TRUE)  # Clean column names
+  return(df)
+}
+
+# Import, read and clean CSV files
+level1_data <- read_csv(file_level1, show_col_types = FALSE) %>% clean_colnames()
+level2_data <- read_csv(file_level2, show_col_types = FALSE) %>% clean_colnames()
+baseline_data <- read_csv(file_baseline, show_col_types = FALSE) %>% clean_colnames()
+
+# Extract unique IDs from both Level 1 and Level 2 hypoglycaemia data
+unique_ids <- unique(c(level1_data$Hypometrics_ID, level2_data$Hypometrics_ID))
+
+# Filter the baseline data to include only those with matching Hypometrics IDs
+filtered_baseline <- baseline_data %>%
+  filter(Hypometrics_ID %in% unique_ids)
+
+# Function to convert HbA1c values from percentage to mmol/mol
+# Applies the conversion only if the unit is "percentage"
+convert_hba1c <- function(value, unit) {
+  sapply(seq_along(value), function(i) {
+    if (is.na(unit[i]) || tolower(unit[i]) != "percentage") {
+      return(value[i])  # If unit is missing or not in percentage, return the original value
+    } else {
+      return(10.929 * (value[i] - 2.15))  # Conversion formula for HbA1c percentage to mmol/mol
+    }
+  })
+}
+
+# Normalise HbA1c units and apply conversion where necessary
+filtered_baseline <- filtered_baseline %>%
+  mutate(hba1c_unit = tolower(trimws(hba1c_unit)),  # Ensure HbA1c unit is lowercase and remove whitespace
+         hba1c = as.numeric(hba1c),  # Convert HbA1c values to numeric
+         hba1c = convert_hba1c(hba1c, hba1c_unit))  # Convert HbA1c from percentage to mmol/mol where needed
+
+# Function to calculate the number of years living with diabetes
+# Subtracts the year of diagnosis from the current year (2022)
+calculate_years <- function(year_of_diagnosis) {
+  2022 - year_of_diagnosis
+}
+
+# Add a column to the dataset for years living with diabetes
+filtered_baseline <- filtered_baseline %>%
+  mutate(years_with_diabetes = calculate_years(year_of_diagnosis))
+
+# Function to create a demographic summary table
+# Calculates mean/standard deviation for numeric values and counts for categorical variables
+create_demographic_table <- function(data) {
+  data %>%
+    summarise(
+      "Age (Mean)" = round(mean(as.numeric(age), na.rm = TRUE), 2),
+      "Age (SD)" = round(sd(as.numeric(age), na.rm = TRUE), 2),
+      "HbA1C (Mean)" = round(mean(as.numeric(hba1c), na.rm = TRUE), 2),
+      "HbA1C (SD)" = round(sd(as.numeric(hba1c), na.rm = TRUE), 2),
+      "Years with Diabetes (Mean)" = round(mean(as.numeric(years_with_diabetes), na.rm = TRUE), 2),
+      "Years with Diabetes (SD)" = round(sd(as.numeric(years_with_diabetes), na.rm = TRUE), 2),
+      "Female Count" = sum(sex == "Female"),
+      "Male Count" = sum(sex == "Male"),
+      "Other Sex Count" = sum(sex == "Other"),
+      "Asian Count" = sum(race == "Asian"),
+      "Black Count" = sum(race == "Black"),
+      "Other Race Count" = sum(race == "Other"),
+      "White Count" = sum(race == "White"),
+      "Type 1 Count" = sum(diabetes_type == "Type 1"),
+      "Type 2 Count" = sum(diabetes_type == "Type 2"),
+      "CGM Count" = sum(glc_monitoring == "CGM"),
+      "Flash Count" = sum(glc_monitoring == "Flash"),
+      "SMBG Count" = sum(glc_monitoring == "SMBG")
+    ) %>%
+    pivot_longer(cols = everything(), names_to = "Category", values_to = "Value")  # Reshape the summary table
+}
+
+# Create the demographic summary table
+demographic_table_combined <- create_demographic_table(filtered_baseline)
+
+# Function to plot and save tables as images
+# Saves the demographic summary as a PNG image file
+plot_and_save_table <- function(data, title, filename) {
+  table_grob <- tableGrob(data, rows = NULL)  # Create a table 
+  png(filename, width = 1200, height = 450)  # Create a PNG file with specified dimensions
+  grid.newpage()  # Start a new page
+  grid.text(title, x = 0.5, y = 0.985, gp = gpar(fontsize = 15, fontface = "bold"))  # Add a title above the table
+  grid.draw(table_grob)  # Draw the table on the page
+  dev.off()  # Close the PNG device and save the file
+}
+
+# Save the demographic summary table as an image file
+output_dir <- "/home/ej121/dissertation_part2/demographics"
+plot_and_save_table(demographic_table_combined, "Demographic Summary - Combined", file.path(output_dir, "demographic_table_combined.png"))
+
+# Print the file path where the image is saved
+cat("Demographic table saved as an image in:", output_dir)
