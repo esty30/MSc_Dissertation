@@ -48,7 +48,7 @@ def save_summary_table(chi2_result, filename):
         'Chi-squared Statistic': [chi2_result[0]],
         'p-value': [chi2_result[1]],
         'Degrees of Freedom': [chi2_result[2]],
-        'Significance': ['Significant' if chi2_result[1] < 0.05 else 'Not Significant']
+        'Significance': ['Significant' if chi2_result[1] < 0.001 else 'Not Significant']
     }
     summary_table = pd.DataFrame(data)
     table = ax.table(cellText=summary_table.values, colLabels=summary_table.columns, loc='center')
