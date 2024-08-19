@@ -1,0 +1,65 @@
+import pandas as pd
+from scipy.stats import chi2_contingency
+import matplotlib.pyplot as plt
+import os
+
+# Load the dataset
+file_path = '/home/ej121/dissertation_part3/chi_tests/combined_hypo_summary.csv'
+data = pd.read_csv(file_path)
+
+# Create a function to map symptomatic cases to boolean values
+def is_symptomatic(row, level):
+    return row[f'Number_of_symptomatic_{level}'] > 0
+
+# Add symptomatic status columns to the dataframe
+data['Symptomatic_3_9'] = data.apply(is_symptomatic, level='3_9', axis=1)
+data['Symptomatic_3_0'] = data.apply(is_symptomatic, level='3_0', axis=1)
+
+# Create contingency tables
+contingency_table_level_1 = pd.crosstab(
+    data['Progressed'], 
+    data['Symptomatic_3_9'].map({False: 'Non-symptomatic', True: 'Symptomatic'}),
+    rownames=['Progressed'],
+    colnames=['Symptomatic'],
+    margins=False
+)
+contingency_table_level_2 = pd.crosstab(
+    data['Progressed'], 
+    data['Symptomatic_3_0'].map({False: 'Non-symptomatic', True: 'Symptomatic'}),
+    rownames=['Progressed'],
+    colnames=['Symptomatic'],
+    margins=False
+)
+
+# Perform Chi-squared test for both levels
+chi2_result_1 = chi2_contingency(contingency_table_level_1)
+chi2_result_2 = chi2_contingency(contingency_table_level_2)
+
+# Define the directory to save the images
+output_dir = '/home/ej121/dissertation_part3/chi_tests'
+os.makedirs(output_dir, exist_ok=True)
+
+# Function to save summary results as an image
+def save_summary_table(chi2_result, filename):
+    fig, ax = plt.subplots()
+    ax.axis('tight')
+    ax.axis('off')
+    data = {
+        'Chi-squared Statistic': [chi2_result[0]],
+        'p-value': [chi2_result[1]],
+        'Degrees of Freedom': [chi2_result[2]],
+        'Significance': ['Significant' if chi2_result[1] < 0.05 else 'Not Significant']
+    }
+    summary_table = pd.DataFrame(data)
+    table = ax.table(cellText=summary_table.values, colLabels=summary_table.columns, loc='center')
+    plt.title(filename.split('/')[-1].replace('.png', ''))
+    plt.savefig(filename, bbox_inches='tight')
+    plt.close()
+
+# Save the chi-squared test results
+save_summary_table(chi2_result_1, os.path.join(output_dir, 'chi_squared_results_level_1.png'))
+save_summary_table(chi2_result_2, os.path.join(output_dir, 'chi_squared_results_level_2.png'))
+
+# Print the results
+print(f"Level 1 Chi-squared Results: {chi2_result_1}")
+print(f"Level 2 Chi-squared Results: {chi2_result_2}")
