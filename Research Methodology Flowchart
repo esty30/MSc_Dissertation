@@ -1,0 +1,46 @@
+import graphviz
+
+# Create a new Digraph for the flowchart with a vertical layout
+dot = graphviz.Digraph(comment='Research Methodology Flowchart', format='png')
+
+# Title for the flowchart
+dot.attr(label='Research Methodology Overview')
+dot.attr(fontsize='15', fontcolor='black', fontname='Helvetica bold', labelloc='t')
+
+# Define main steps
+steps = [
+    ("A", "Introduction Figures", "Compile initial data using Python; format with HTML & CSS for presentation."),
+    ("B", "Demographic Analysis", "Import data with R, perform cleaning and standardisation, create summary tables."),
+    ("C", "Principal Analysis", "Categorise data based on SDH and PRH, generate summary tables and pie charts."),
+    ("D", "Progression Analysis", "Clean and filter data, identify and summarise overall progression rate from level 1 to level 2 -> then analyse symptomatic progression."),
+    ("E", "Statistical Analysis: Chi-Squared Test", "Perform chi-squared test to examine the association between symptomatic episodes and progression."),
+    ("F", "Statistical Analysis: Logistic Regression", "Fit logistic regression models to explore baseline characteristics (key predictors) influencing symptomatic progression.")
+]
+
+# Nodes for steps and descriptions
+for id, label, description in steps:
+    with dot.subgraph() as s:
+        s.attr(rank='same')
+        # Main step node
+        s.node(id, label)
+        # Description node right next to it
+        s.node(id + 'desc', description, shape='plaintext', fontcolor='blue')
+
+        # Connect each main node to its description with an invisible edge
+        s.edge(id, id + 'desc', style='invisible')
+
+# Add edges between the main steps
+for i in range(len(steps) - 1):
+    dot.edge(steps[i][0], steps[i + 1][0])
+
+# Legend and GitHub link
+dot.node('Legend', 'See GitHub for scripts:\n[https://github.com/esty30/MSc_Dissertation]', shape='note')
+dot.edge(steps[-1][0], 'Legend')
+
+# Specify file path for saving the flowchart
+output_path = '/home/ej121/dissertation_part3/flowchart/research_methodology_flowchart'
+
+# Save the flowchart
+dot.render(output_path, view=True)
+
+print(f"Flowchart has been created and saved as '{output_path}.png'.")
