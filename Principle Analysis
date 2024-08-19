@@ -1,0 +1,136 @@
+# Install necessary packages if not already installed
+if (!require(tidyverse)) install.packages("tidyverse")
+if (!require(ggplot2)) install.packages("ggplot2")
+if (!require(gridExtra)) install.packages("gridExtra")
+if (!require(patchwork)) install.packages("patchwork")
+if (!require(grid)) install.packages("grid")
+
+# Load libraries
+library(tidyverse)  
+library(ggplot2)    
+library(gridExtra)  
+library(patchwork)  
+library(grid)       
+
+# Set the working directory to the project folder (modify the path to suit your system)
+setwd("/home/ej121/dissertation_part3/principle_analysis")
+
+# Read CSV files
+# Load data for different SDH levels
+data1 <- read_csv("/home/ej121/dissertation_part3/principle_analysis/Trial_sdh3.0_allprh_map.csv", show_col_types = FALSE)  # Data for SDH level 2
+data2 <- read_csv("/home/ej121/dissertation_part3/principle_analysis/Trial_sdh3.9_allprh_map.csv", show_col_types = FALSE)  # Data for SDH level 1
+
+# Add SDH level flag to each dataset
+# This helps in identifying data from different SDH levels within the combined dataset
+data1 <- data1 %>%
+  mutate(SDH_level = "SDH level 2")  # Add a column indicating SDH level 2
+
+data2 <- data2 %>%
+  mutate(SDH_level = "SDH level 1")  # Add a column indicating SDH level 1
+
+# Combine the two data frames into one
+# This enables easier manipulation and analysis of data from both SDH levels together
+combined_data <- bind_rows(data1, data2)
+
+# Define the categories based on given conditions
+# Each data point is categorised based on its SDH and PRH status
+combined_data <- combined_data %>%
+  mutate(
+    Category = case_when(
+      !is.na(sdh_number) & tolower(is_symptomatic_prh) == "yes" ~ "SDH with symptomatic PRH",  # Symptomatic PRH with SDH
+      !is.na(sdh_number) & tolower(is_symptomatic_prh) == "no" ~ "SDH with non-symptomatic PRH",  # Non-symptomatic PRH with SDH
+      !is.na(sdh_number) & is.na(Checkin_PRH_number) ~ "SDH without PRH",  # SDH without PRH
+      TRUE ~ "Other"  # Category for any data points that do not fit the above conditions
+    )
+  )
+
+# Filter out the 'Other' category, as it is not relevant to this analysis
+combined_data <- combined_data %>% 
+  filter(Category != "Other")
+
+# Function to generate summary tables
+# This function summarises the count and percentage of each category for the given SDH level
+generate_summary_table <- function(data, sdh_level) {
+  # Summarise the data by counting occurrences of each category
+  summary_table <- data %>%
+    filter(SDH_level == sdh_level) %>%
+    group_by(Category) %>%
+    summarise(Count = n(), .groups = 'drop') %>%
+    mutate(Percentage = round((Count / sum(Count)) * 100, 1)) %>%  # Round percentages to 1 decimal place
+    mutate(Count_Percentage = paste0(Count, " (", Percentage, "%)")) %>%
+    select(Category, Count_Percentage)  # Select relevant columns for the summary table
+  
+  # Update column names for clarity
+  colnames(summary_table) <- c("Category", "Count (Percentage)")
+  
+  # Save the summary table as a PNG image for reference
+  table_grob <- tableGrob(summary_table, rows = NULL, theme = ttheme_default(base_size = 12))
+  png(paste0("/home/ej121/dissertation_part3/principle_analysis/summary_table_", sdh_level, ".png"), width = 800, height = 600)
+  grid.draw(table_grob)
+  dev.off()
+  
+  return(summary_table)
+}
+
+# Generate summary tables for each SDH level
+# The tables show counts and percentages for each category
+summary_level_1 <- generate_summary_table(combined_data, "SDH level 1")
+summary_level_2 <- generate_summary_table(combined_data, "SDH level 2")
+
+# Print the summary tables to the console for inspection
+print(summary_level_1)
+print(summary_level_2)
+
+# Function to generate pie charts for SDH and PRH categories separately
+# This function generates pie charts visualising the distribution of SDH and PRH categories
+generate_pie_charts <- function(data, sdh_level) {
+  
+  # Pie chart for SDH categories
+  sdh_pie_data <- data %>%
+    filter(SDH_level == sdh_level) %>%
+    filter(Category %in% c("SDH without PRH", "SDH with symptomatic PRH", "SDH with non-symptomatic PRH")) %>%
+    group_by(Category) %>%
+    summarise(Count = n(), .groups = 'drop') %>%
+    mutate(Percentage = round((Count / sum(Count)) * 100, 1)) %>%  # Round percentages to 1 decimal place
+    mutate(Pie_Label = paste0(Category, " (", Percentage, "%)"))  # Create pie chart labels
+  
+  # Create the pie chart
+  sdh_pie_chart <- ggplot(sdh_pie_data, aes(x = "", y = Count, fill = Pie_Label)) +
+    geom_bar(stat = "identity", width = 1) +
+    coord_polar(theta = "y") +  # Convert the bar chart into a pie chart
+    theme_void() +  # Remove unnecessary elements from the plot
+    labs(title = paste("SDH Distribution -", sdh_level)) +  # Add the chart title
+    theme(legend.title = element_blank(),  # No title for the legend
+          legend.text = element_text(size = 14),  # Increase font size for the legend
+          plot.title = element_text(size = 18, face = "bold"))  # Increase font size for the title
+  
+  # Save the pie chart as a PNG image
+  ggsave(paste0("/home/ej121/dissertation_part3/principle_analysis/sdh_pie_chart_", sdh_level, ".png"), plot = sdh_pie_chart, width = 8, height = 6)
+  
+  # Pie chart for PRH categories
+  prh_pie_data <- data %>%
+    filter(SDH_level == sdh_level) %>%
+    filter(Category %in% c("SDH with symptomatic PRH", "SDH with non-symptomatic PRH")) %>%
+    group_by(Category) %>%
+    summarise(Count = n(), .groups = 'drop') %>%
+    mutate(Percentage = round((Count / sum(Count)) * 100, 1)) %>%  # Round percentages to 1 decimal place
+    mutate(Pie_Label = paste0(Category, " (", Percentage, "%)"))  # Create pie chart labels
+  
+  # Create the pie chart
+  prh_pie_chart <- ggplot(prh_pie_data, aes(x = "", y = Count, fill = Pie_Label)) +
+    geom_bar(stat = "identity", width = 1) +
+    coord_polar(theta = "y") +  # Convert the bar chart into a pie chart
+    theme_void() +  # Remove unnecessary elements from the plot
+    labs(title = paste("PRH Distribution -", sdh_level)) +  # Add the chart title
+    theme(legend.title = element_blank(),  # No title for the legend
+          legend.text = element_text(size = 14),  # Increase font size for the legend
+          plot.title = element_text(size = 18, face = "bold"))  # Increase font size for the title
+  
+  # Save the pie chart as a PNG image
+  ggsave(paste0("/home/ej121/dissertation_part3/principle_analysis/prh_pie_chart_", sdh_level, ".png"), plot = prh_pie_chart, width = 8, height = 6)
+}
+
+# Generate pie charts for both SDH levels
+# This produces pie charts showing the distribution of SDH and PRH categories
+generate_pie_charts(combined_data, "SDH level 1")
+generate_pie_charts(combined_data, "SDH level 2")
