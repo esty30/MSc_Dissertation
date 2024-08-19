@@ -1,0 +1,20 @@
+import pandas as pd
+
+# Load the dataset
+file_path = '/home/ej121/dissertation_part2/association/combined_hypo_summary.csv'
+data = pd.read_csv(file_path)
+
+# Create a column to classify symptomatic vs non-symptomatic based on 'Number_of_symptomatic_3_9'
+data['Symptomatic_Status'] = data['Number_of_symptomatic_3_9'].apply(lambda x: 'Symptomatic' if x > 0 else 'Non-symptomatic')
+
+# Create a column to handle 'Progressed' vs 'Did not progress' cases
+data['Progression_Status'] = data['Progressed'].apply(lambda x: 'Progressed' if x == 'Progressed' else 'Did not progress')
+
+# Create the contingency table
+contingency_table = pd.crosstab(data['Symptomatic_Status'], data['Progression_Status'])
+
+# Save the table to a CSV file
+output_path = '/home/ej121/dissertation_part2/association/contingency_table.csv'
+contingency_table.to_csv(output_path)
+
+print(f"Contingency table saved to {output_path}")
