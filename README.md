@@ -7,11 +7,12 @@ Project Overview
 
 The project is divided into multiple stages:
 
-Introduction Figures
-Demographic Analysis 
-Principle Analysis 
-Progression Analysis (Overall and Symptomatic Progression)
-Statistical Analysis (Chi-squared tests and Logistic regression)
+1) Introduction Figures
+2) Demographic Analysis
+3) Principle Analysis
+4) Progression Analysis (Overall and Symptomatic Progression)
+5) Statistical Analysis (Chi-squared tests and Logistic regression)
+   
 *All scripts are named respective of their titles within the written dissertation
 *All scripts produced outputs and visualisations 
 
