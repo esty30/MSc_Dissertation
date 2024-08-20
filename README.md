@@ -42,6 +42,7 @@ Trial_baseline_characteristics.csv (Baseline characteristics of participants)
 
 2. File paths must be changed from orginal scripts
 3. Run on terminal or R studio with specific commands
+4. If you use this repository, please reference: https://github.com/esty30/MSc_Dissertation
 
 Future Directions 
 - Learn and embed Power BI & Tableau for better data visualisations
